@@ -4,11 +4,30 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  lint:
+    name: Lint and types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.11"
+      - run: uv sync --frozen
+      - name: Ruff
+        run: uv run --frozen ruff check src tests examples scripts
+      - name: Mypy
+        run: uv run --frozen mypy src scripts
+
   test:
     name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -17,15 +36,13 @@ jobs:
       matrix:
         python-version: ["3.11", "3.14"]
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
       - run: uv sync --frozen
       - run: uv run --frozen python -m unittest discover -s tests -v
-      - run: uv run --frozen ruff check src tests examples
-      - run: uv run --frozen mypy src
-      - name: Run examples offline
+      - name: Run examples and the CLI offline
         env:
           TYPESAFE_API_KEY: ""
         run: |
@@ -34,12 +51,24 @@ jobs:
           uv run --frozen python examples/calibration.py
           uv run --frozen jev-harness preview < examples/snapshot.json > /dev/null
 
+  readme:
+    name: README snippets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.11"
+      - run: uv sync --frozen
+      - name: Execute every README code block
+        run: uv run --frozen python scripts/check_readme.py README.md
+
   build:
     name: Build and install wheel
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.11"
       - run: uv build
@@ -53,3 +82,32 @@ jobs:
           for example in advisory shadow_judgments calibration; do
             "$RUNNER_TEMP/wheel-venv/bin/python" "$GITHUB_WORKSPACE/examples/$example.py"
           done
+
+  demos:
+    name: Render demo tapes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.11"
+      - run: uv sync --frozen
+      - name: Install VHS
+        uses: charmbracelet/vhs-action@f6d7db07a432fcd3b06772628d36a57f96d95dcf # v2.1.1
+        with:
+          version: v0.12.1
+      - name: Render every tape into a scratch directory
+        run: |
+          mkdir -p "$RUNNER_TEMP/demos"
+          for tape in docs/demos/[!_]*.tape; do
+            echo "::group::$tape"
+            vhs "$tape"
+            echo "::endgroup::"
+          done
+          cp docs/demos/*.gif docs/demos/*.mp4 "$RUNNER_TEMP/demos/"
+          git checkout -- docs/demos
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: demo-renders
+          path: ${{ runner.temp }}/demos
+          retention-days: 7

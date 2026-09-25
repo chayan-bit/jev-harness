@@ -38,6 +38,8 @@ jev-harness = "jev_harness.cli:main"
 Homepage = "https://github.com/chayan-bit/jev-harness"
 Repository = "https://github.com/chayan-bit/jev-harness"
 Issues = "https://github.com/chayan-bit/jev-harness/issues"
+Documentation = "https://github.com/chayan-bit/jev-harness/tree/main/docs"
+Changelog = "https://github.com/chayan-bit/jev-harness/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]
