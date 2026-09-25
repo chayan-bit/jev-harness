@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jev-harness"
-version = "0.1.0"
+version = "0.1.1"
 description = "Attachable Jev elements for any agent harness: bounded advisory, source-bound shadow judgments and threshold calibration."
 readme = "README.md"
 requires-python = ">=3.11"
