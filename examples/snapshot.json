@@ -1,0 +1,29 @@
+{
+  "context_id": "replace-with-current-session-id",
+  "captured_at": "2026-09-22T12:00:00Z",
+  "task_summary": "Repair one bounded parser regression and run its tests.",
+  "phase": "implementation",
+  "pending_action_count": 2,
+  "recent_failure_count": 1,
+  "context_tokens_used": 20000,
+  "context_token_capacity": 100000,
+  "checkpoint_ready": true,
+  "available_difficulties": [
+    {"id": "routine", "description": "A bounded change with a known implementation path."},
+    {"id": "complex", "description": "A change with interacting contracts or uncertain failure modes."}
+  ],
+  "available_reasoning_efforts": [
+    {"id": "low", "description": "Fast handling for a direct, low-risk operation."},
+    {"id": "medium", "description": "Moderate analysis for a bounded implementation."},
+    {"id": "high", "description": "Deeper analysis for interacting correctness or security risks."}
+  ],
+  "available_skills": [
+    {"id": "none", "description": "Use no specialized skill for this task."},
+    {"id": "test-runner", "description": "Run and triage the unit tests for the current change."}
+  ],
+  "available_compaction_actions": [
+    {"id": "defer", "description": "Keep the current context because capacity is sufficient."},
+    {"id": "compact_now", "description": "Summarize the thread after the current checkpoint is durable."}
+  ],
+  "supported_host_actions": ["model", "skills", "status", "compact"]
+}

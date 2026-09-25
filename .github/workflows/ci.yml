@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --frozen
+      - run: uv run --frozen python -m unittest discover -s tests -v
+      - run: uv run --frozen ruff check src tests examples
+      - run: uv run --frozen mypy src
+      - name: Run examples offline
+        env:
+          TYPESAFE_API_KEY: ""
+        run: |
+          uv run --frozen python examples/advisory.py
+          uv run --frozen python examples/shadow_judgments.py
+          uv run --frozen python examples/calibration.py
+          uv run --frozen jev-harness preview < examples/snapshot.json > /dev/null
+
+  build:
+    name: Build and install wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: "3.11"
+      - run: uv build
+      - name: Install wheel into a fresh venv and run the examples
+        run: |
+          uv venv "$RUNNER_TEMP/wheel-venv"
+          uv pip install --python "$RUNNER_TEMP/wheel-venv/bin/python" dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/wheel-venv/bin/python" -c "import jev_harness; print(len(jev_harness.__all__))"
+          "$RUNNER_TEMP/wheel-venv/bin/jev-harness" hook-config
+          for example in advisory shadow_judgments calibration; do
+            "$RUNNER_TEMP/wheel-venv/bin/python" "$GITHUB_WORKSPACE/examples/$example.py"
+          done
