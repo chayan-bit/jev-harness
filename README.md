@@ -49,7 +49,7 @@ jev-harness requires Python 3.11 or newer and runs on Linux and macOS.
 It is not published on PyPI yet, so install it from a tagged Git revision:
 
 ```sh
-pip install "jev-harness @ git+https://github.com/chayan-bit/jev-harness@v0.1.0" # x-release-please-version
+pip install "jev-harness @ git+https://github.com/chayan-bit/jev-harness@v0.1.1" # x-release-please-version
 ```
 
 This also installs Jev-Frame from its public `v0.1.0` tag over HTTPS.
