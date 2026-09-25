@@ -71,8 +71,8 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 
 1. Every push to `main` updates an open release pull request titled like `chore(main): release 0.2.0`.
    It bumps the version in `pyproject.toml`, `uv.lock`, `jev_harness.__version__`, and the README install command, and adds a `CHANGELOG.md` section built from the Conventional Commits since the last release.
-2. Because the release pull request is opened by GitHub Actions, CI does not start on it automatically.
-   Close and reopen it (or push a commit to its branch) to run the required checks.
+2. The release workflow dispatches CI on the release pull request branch each time it opens or updates the pull request, so the required checks run without any manual step.
+   Do not close and reopen the release pull request, because that races with release-please and can strip its `autorelease: pending` label.
 3. When the maintainer merges it, release-please tags the merge commit (for example `v0.2.0`) and publishes a GitHub release with the same notes.
 
 Never edit `CHANGELOG.md` by hand.
